@@ -43,5 +43,5 @@ $ sudo distractions on
 Check if it's on/off:
 
 ```bash
-$ sudo distractions status
+$ distractions status
 ```
