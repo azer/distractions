@@ -37,7 +37,7 @@ It'll add these lines to `/etc/hosts`:
 You can turn them on if needed, so they'll be removed from `/etc/hosts`
 
 ```bash
-$ distractions on
+$ sudo distractions on
 ```
 
 Check if it's on/off:
