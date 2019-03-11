@@ -1,0 +1,89 @@
+#!/bin/bash
+
+task=$1
+distractions=$2
+hostsFile=/etc/hosts
+
+turnOff() {
+    if [[ -z "${f// }" ]]; then
+        distractions=$file
+    else
+        distractions=$f
+    fi
+
+    if [[ -z "${distractions// }" ]]; then
+        echo "Provide a valid path to the distractions file."
+        exit 1
+    fi
+
+    if [ ! -f $distractions ]; then
+        echo "$distractions does not exist"
+        exit 1
+    fi
+
+    hostnames=$(cat $distractions | sed -e 's/^/127.0.0.1 /')
+
+    if isOn; then
+        echo "" >> $hostsFile
+        echo "# <distractions>" >> $hostsFile
+        echo -e "${hostnames}" >> $hostsFile
+        echo "# </distractions>" >> $hostsFile
+    fi
+}
+
+turnOn() {
+  if ! isOn; then
+      sed -i '/# <distractions>/,/# <\/distractions>/d' $hostsFile
+      sed -i -e :a -e '/^\n*$/{$d;N;};/\n$/ba' $hostsFile
+  fi
+}
+
+status() {
+    if isOn; then
+        echo "on"
+    else
+        echo "off"
+    fi
+}
+
+isOn() {
+    if grep -q "# <distractions>" $hostsFile; then
+        return 1
+    else
+        return 0
+    fi
+}
+
+while [ $# -gt 0 ]; do
+    if [[ $1 == *"--"* ]]; then
+        v="${1/--/}"
+        declare $v="$2"
+    fi
+
+    if [[ $1 == *"-"* ]]; then
+        v="${1/-/}"
+        declare $v="$2"
+    fi
+
+    shift
+done
+
+if [[ $task == "on" ]]; then
+    turnOn
+elif [[ $task == "off" ]]; then
+    turnOff
+elif [[ $task == "status" ]]; then
+    status
+else
+    echo ""
+    echo "SYNOPSIS"
+    echo "    distractions [on|off|status]"
+    echo
+    echo "OPTIONS"
+    echo "    -f --file"
+    echo "        Path to the distractions file. Needed for 'off' command"
+    echo ""
+    echo "    -h --help"
+    echo "        Show help"
+    echo
+fi
