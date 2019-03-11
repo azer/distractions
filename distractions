@@ -22,11 +22,14 @@ turnOff() {
     fi
 
     hostnames=$(cat $distractions | sed -e 's/^/127.0.0.1 /')
+    hostnamesWithWWW=$(cat $distractions | sed -e 's/^/127.0.0.1 www./')
 
     if isOn; then
+
         echo "" >> $hostsFile
         echo "# <distractions>" >> $hostsFile
         echo -e "${hostnames}" >> $hostsFile
+        echo -e "${hostnamesWithWWW}" >> $hostsFile
         echo "# </distractions>" >> $hostsFile
     fi
 }
