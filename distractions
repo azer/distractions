@@ -35,10 +35,18 @@ turnOff() {
 }
 
 turnOn() {
-  if ! isOn; then
-      sed -i '/# <distractions>/,/# <\/distractions>/d' $hostsFile
-      sed -i -e :a -e '/^\n*$/{$d;N;};/\n$/ba' $hostsFile
-  fi
+    if ! isOn; then
+        sed -i '/# <distractions>/,/# <\/distractions>/d' $hostsFile
+        sed -i -e :a -e '/^\n*$/{$d;N;};/\n$/ba' $hostsFile
+    fi
+}
+
+toggle() {
+    if ! isOn; then
+        turnOn
+    else
+        turnOff
+    fi
 }
 
 status() {
@@ -58,12 +66,10 @@ isOn() {
 }
 
 while [ $# -gt 0 ]; do
-    if [[ $1 == *"--"* ]]; then
+    if [[ ${1:0:2} == "--" ]]; then
         v="${1/--/}"
         declare $v="$2"
-    fi
-
-    if [[ $1 == *"-"* ]]; then
+    elif [[ ${1:0:1} == "-" ]]; then
         v="${1/-/}"
         declare $v="$2"
     fi
@@ -75,12 +81,14 @@ if [[ $task == "on" ]]; then
     turnOn
 elif [[ $task == "off" ]]; then
     turnOff
+elif [[ $task == "toggle" ]]; then
+    toggle
 elif [[ $task == "status" ]]; then
     status
 else
     echo ""
     echo "SYNOPSIS"
-    echo "    distractions [on|off|status]"
+    echo "    distractions [on|off|toggle|status]"
     echo
     echo "OPTIONS"
     echo "    -f --file"
