@@ -2,6 +2,18 @@
 
 A command-line tool to define distracting websites and turn them on/off when needed.
 
+```
+SYNOPSIS
+    distractions [on|off|toggle|status]
+
+OPTIONS
+    -f --file
+        Path to the distractions file. Needed for 'off' command
+
+    -h --help
+        Show help
+```
+
 # Install
 
 Clone and add it to `$PATH`
