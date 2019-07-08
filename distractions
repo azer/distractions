@@ -1,28 +1,42 @@
 #!/bin/bash
 
 task=$1
-distractions=$2
+
+# Convert all parameters to variables
+while [ $# -gt 0 ]; do
+    if [[ ${1:0:2} == "--" ]]; then
+        v="${1/--/}"
+        v="${v/-/_}"
+        declare $v="$2"
+        declare $v"_enabled"="1"
+    elif [[ ${1:0:1} == "-" ]]; then
+        v="${1/-/}"
+        v="${v/-/_}"
+        declare $v="$2"
+        declare "$v_enabled"="1"
+    fi
+    shift
+done
+
+distractionsFile=${file:-$f}
 hostsFile=/etc/hosts
+sessionFile=/tmp/distractions-session
+pomodoroWorkTime=${work_time:-25m}
+pomodoroBreakTime=${break_time:-5m}
 
 turnOff() {
-    if [[ -z "${f// }" ]]; then
-        distractions=$file
-    else
-        distractions=$f
-    fi
-
-    if [[ -z "${distractions// }" ]]; then
+    if [[ -z "${distractionsFile// }" ]]; then
         echo "Provide a valid path to the distractions file."
         exit 1
     fi
 
-    if [ ! -f $distractions ]; then
-        echo "$distractions does not exist"
+    if [ ! -f $distractionsFile ]; then
+        echo "$distractionsFile does not exist"
         exit 1
     fi
 
-    hostnames=$(cat $distractions | sed -e 's/^/127.0.0.1 /')
-    hostnamesWithWWW=$(cat $distractions | sed -e 's/^/127.0.0.1 www./')
+    hostnames=$(cat $distractionsFile | sed -e 's/^/127.0.0.1 /')
+    hostnamesWithWWW=$(cat $distractionsFile | sed -e 's/^/127.0.0.1 www./')
 
     if isOn; then
 
@@ -31,6 +45,8 @@ turnOff() {
         echo -e "${hostnames}" >> $hostsFile
         echo -e "${hostnamesWithWWW}" >> $hostsFile
         echo "# </distractions>" >> $hostsFile
+
+        touch $sessionFile
     fi
 }
 
@@ -38,6 +54,7 @@ turnOn() {
     if ! isOn; then
         sed -i '/# <distractions>/,/# <\/distractions>/d' $hostsFile
         sed -i -e :a -e '/^\n*$/{$d;N;};/\n$/ba' $hostsFile
+        touch $sessionFile
     fi
 }
 
@@ -57,6 +74,101 @@ status() {
     fi
 }
 
+clock() {
+    if [ $json_enabled ]; then
+        jsonClock
+        exit 1
+    fi
+
+    if [ $relative_enabled ]; then
+        relativeClock
+        exit 1
+    fi
+
+    label="Work"
+    if isOn; then
+        label="Break"
+    fi
+
+    hours=`printf "%02d" $(hoursAgo)`
+    minutes=`printf "%02d" $(minutesAgo)`
+    echo "$hours:$minutes $label"
+}
+
+jsonClock() {
+    label="Work"
+    class="pomodoro-work-mode"
+    if isOn; then
+        label="Break"
+        class="pomodoro-break-mode"
+    fi
+
+    hours=`printf "%02d" $(hoursAgo)`
+    minutes=`printf "%02d" $(minutesAgo)`
+    echo "{ \"text\": \"$hours:$minutes $label\", \"class\": \"$class\" }"
+}
+
+relativeClock() {
+    relativeTime=$(minutesAgo)" minutes"
+
+    if [[ $(hoursAgo) -gt 0 ]]; then
+        relativeTime=$(hoursAgo)" hours"
+    fi
+
+    echo $relativeTime
+}
+
+pomodoro() {
+    echo "Starting Pomodoro."
+
+    while true; do
+        startWork
+        startBreak
+    done
+
+    echo "Stopping Pomodoro mode."
+}
+
+startWork() {
+    echo "Starting work-mode."
+    turnOff
+
+    if [ -f ~/.pomodoro/start-work.sh ]; then
+        sh ~/.pomodoro/start-work.sh
+    fi
+
+    sleep $pomodoroWorkTime
+}
+
+stopWork() {
+    echo "Starting break"
+    turnOn
+    if [ -f ~/.pomodoro/start-work.sh ]; then
+        sh ~/.pomodoro/start-work.sh
+    fi
+    sleep $pomodoroBreakTime
+}
+
+checkSessionFile() {
+    if [ ! -f $sessionFile ]; then
+        touch $sessionFile
+    fi
+}
+
+hoursAgo() {
+    checkSessionFile;
+    result=$((($(date +%s) - $(date -r $sessionFile +%s))/(60*60)))
+    echo $result
+    return $result
+}
+
+minutesAgo() {
+    checkSessionFile;
+    result=$((($(date +%s) - $(date -r $sessionFile +%s))/(60)))
+    echo $result
+    return $result
+}
+
 isOn() {
     if grep -q "# <distractions>" $hostsFile; then
         return 1
@@ -64,18 +176,6 @@ isOn() {
         return 0
     fi
 }
-
-while [ $# -gt 0 ]; do
-    if [[ ${1:0:2} == "--" ]]; then
-        v="${1/--/}"
-        declare $v="$2"
-    elif [[ ${1:0:1} == "-" ]]; then
-        v="${1/-/}"
-        declare $v="$2"
-    fi
-
-    shift
-done
 
 if [[ $task == "on" ]]; then
     turnOn
@@ -85,14 +185,26 @@ elif [[ $task == "toggle" ]]; then
     toggle
 elif [[ $task == "status" ]]; then
     status
+elif [[ $task == "clock" ]]; then
+    clock
+elif [[ $task == "pomodoro" ]]; then
+    pomodoro
 else
     echo ""
     echo "SYNOPSIS"
-    echo "    distractions [on|off|toggle|status]"
+    echo "    distractions [on|off|toggle|status|clock|pomodoro]"
     echo
     echo "OPTIONS"
     echo "    -f --file"
     echo "        Path to the distractions file. Needed for 'off' command"
+    echo "       --work-time"
+    echo "        Work time for pomodoro mode. Example values: '20m' '1h'. Default: 25m."
+    echo "       --break-time"
+    echo "        Break time for pomodoro mode. Example values: 20m, 3m. Default: 5m"
+    echo "       --json"
+    echo "        Format output as JSON. (Only implemented for clock command)"
+    echo "       --relative"
+    echo "        Format output as relative time. (Only implemented for clock command)"
     echo ""
     echo "    -h --help"
     echo "        Show help"

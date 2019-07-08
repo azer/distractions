@@ -1,6 +1,6 @@
 # distractions
 
-A command-line tool to define distracting websites and turn them on/off when needed.
+Command-line distraction management tool with builtin [pomodoro mode](#pomodoro).
 
 # Install
 
@@ -45,3 +45,5 @@ Check if it's on/off:
 ```bash
 $ distractions status
 ```
+
+# Pomodoro
