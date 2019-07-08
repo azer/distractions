@@ -2,6 +2,18 @@
 
 Command-line distraction management tool with builtin [pomodoro mode](#pomodoro).
 
+```
+SYNOPSIS
+    distractions [on|off|toggle|status]
+
+OPTIONS
+    -f --file
+        Path to the distractions file. Needed for 'off' command
+
+    -h --help
+        Show help
+```
+
 # Install
 
 Clone and add it to `$PATH`
