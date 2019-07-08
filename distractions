@@ -133,8 +133,8 @@ startWork() {
     echo "Starting work-mode."
     turnOff
 
-    if [ -f ~/.pomodoro/start-work.sh ]; then
-        sh ~/.pomodoro/start-work.sh
+    if [ -f $on_work ]; then
+        sh $on_work $pomodoroWorkTime
     fi
 
     sleep $pomodoroWorkTime
@@ -143,8 +143,8 @@ startWork() {
 stopWork() {
     echo "Starting break"
     turnOn
-    if [ -f ~/.pomodoro/start-work.sh ]; then
-        sh ~/.pomodoro/start-work.sh
+    if [ -f $on_break ]; then
+        sh $on_break $pomodoroBreakTime
     fi
     sleep $pomodoroBreakTime
 }
@@ -201,6 +201,10 @@ else
     echo "        Work time for pomodoro mode. Example values: '20m' '1h'. Default: 25m."
     echo "       --break-time"
     echo "        Break time for pomodoro mode. Example values: 20m, 3m. Default: 5m"
+    echo "       --on-work"
+    echo "        Execute given script on starting to work"
+    echo "       --on-break"
+    echo "        Execute given script on break"
     echo "       --json"
     echo "        Format output as JSON. (Only implemented for clock command)"
     echo "       --relative"
