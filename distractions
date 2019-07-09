@@ -13,7 +13,7 @@ while [ $# -gt 0 ]; do
         v="${1/-/}"
         v="${v/-/_}"
         declare $v="$2"
-        declare "$v_enabled"="1"
+        declare $v"_enabled"="1"
     fi
     shift
 done
@@ -39,23 +39,23 @@ turnOff() {
     hostnamesWithWWW=$(cat $distractionsFile | sed -e 's/^/127.0.0.1 www./')
 
     if isOn; then
-
         echo "" >> $hostsFile
         echo "# <distractions>" >> $hostsFile
         echo -e "${hostnames}" >> $hostsFile
         echo -e "${hostnamesWithWWW}" >> $hostsFile
         echo "# </distractions>" >> $hostsFile
-
-        touch $sessionFile
     fi
+
+    touch $sessionFile
 }
 
 turnOn() {
     if ! isOn; then
         sed -i '/# <distractions>/,/# <\/distractions>/d' $hostsFile
         sed -i -e :a -e '/^\n*$/{$d;N;};/\n$/ba' $hostsFile
-        touch $sessionFile
     fi
+
+    touch $sessionFile
 }
 
 toggle() {
@@ -133,8 +133,11 @@ startWork() {
     echo "Starting work-mode."
     turnOff
 
-    if [ -f $on_work ]; then
-        sh $on_work $pomodoroWorkTime
+    if [[ -n "${on_work// }" ]]; then
+        if [ -f $on_work ]; then
+            echo "call $on_work"
+            sh $on_work $pomodoroWorkTime
+        fi
     fi
 
     sleep $pomodoroWorkTime
@@ -143,9 +146,13 @@ startWork() {
 stopWork() {
     echo "Starting break"
     turnOn
-    if [ -f $on_break ]; then
-        sh $on_break $pomodoroBreakTime
+
+    if [[ -n "${on_break// }" ]]; then
+        if [ -f $on_break ]; then
+            sh $on_break $pomodoroBreakTime
+        fi
     fi
+
     sleep $pomodoroBreakTime
 }
 
