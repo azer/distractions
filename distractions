@@ -171,7 +171,7 @@ hoursAgo() {
 
 minutesAgo() {
     checkSessionFile;
-    result=$((($(date +%s) - $(date -r $sessionFile +%s))/(60)))
+    result=$((($(date +%s) - $(date -r $sessionFile +%s))/(60)%60))
     echo $result
     return $result
 }
