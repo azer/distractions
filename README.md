@@ -1,10 +1,10 @@
 # distractions
 
-Command-line distraction management tool with builtin [pomodoro mode](#pomodoro).
+A command-line tool (and background service) for managing distractions with builtin [pomodoro mode](#pomodoro).
 
 ```
 SYNOPSIS
-    distractions [on|off|toggle|status|clock|pomodoro]
+    distractions [on|off|toggle|status|background|clock|pomodoro]
 
 OPTIONS
     -f --file
@@ -30,7 +30,7 @@ OPTIONS
 
 Clone and add it to `$PATH`
 
-# Usage
+# Setting up
 
 Create a `.distractions` file in your home directory:
 
@@ -41,10 +41,33 @@ twitter.com
 quora.com
 ```
 
-Turn off distractions:
+Start a background service as `root`, it needs write access to `/etc/hosts`;
 
 ```bash
-$ sudo distractions off -f ~/.distractions
+$ sudo distractions background -f ~/.distractions
+```
+
+If preferred, you can define a system service;
+
+```
+Unit]
+Description=Distractions
+
+[Service]
+Type=simple
+ExecStart=distractions background -f /home/azer/.distractions
+User=root
+
+[Install]
+WantedBy=multi-user.target
+```
+
+# Usage
+
+Once distractions is running on the background, you can call it by sending signals via the same distraction script;
+
+```bash
+$ distractions off
 ```
 
 It'll add these lines to `/etc/hosts`:
@@ -61,7 +84,7 @@ It'll add these lines to `/etc/hosts`:
 You can turn them on if needed, so they'll be removed from `/etc/hosts`
 
 ```bash
-$ sudo distractions on
+$ distractions on
 ```
 
 Check if it's on/off:
@@ -82,7 +105,7 @@ $ distractions clock
 Run `pomodoro` command if you prefer switching work/break mode automatically:
 
 ```bash
-$ distractions pomodoro -f ~/.distractions
+$ distractions pomodoro
 Starting Pomodoro.
 Starting work-mode.
 ```
@@ -90,11 +113,30 @@ Starting work-mode.
 By default, work is 25 minutes and break is 5 minutes. You can customize that;
 
 ```bash
-$ distractions pomodoro -f ~/.distractions --work-time 15m --break-time 3m
+$ distractions pomodoro --work-time 15m --break-time 3m
 ```
 
 You can set custom scripts to be executed when work/break mode starts:
 
 ```bash
-$ distractions pomodoro -f ~/.distractions --on-work ~/start-work.sh --on-break ~/start-break.sh 
+$ distractions pomodoro --on-work ~/start-work.sh --on-break ~/start-break.sh
 ```
+
+If desired, you can define a system service for pomodoro mode so you can control it easily;
+
+```
+Description=Pomodoro
+
+[Service]
+Type=simple
+ExecStart=distractions pomodoro --on-work /home/azer/.pomodoro/start-work.sh --on-break /home/azer/.pomodoro/start-break.sh
+Environment=DISPLAY=:0
+Environment=XAUTHORITY=%h/.Xauthority
+Environment=DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus
+User=azer
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Note that this service runs as non-root user, in contrast to the background service.
