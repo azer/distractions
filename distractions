@@ -24,12 +24,50 @@ sessionFile=/tmp/distractions-session
 pomodoroWorkTime=${work_time:-25m}
 pomodoroBreakTime=${break_time:-5m}
 
-turnOff() {
-    if [[ -z "${distractionsFile// }" ]]; then
-        echo "Provide a valid path to the distractions file."
+background() {
+    trap turnOn USR1
+    trap turnOff USR2
+
+    echo "Starting distractions as a background service. Send following signals to control:"
+    echo "  USR1: Turn on"
+    echo "  USR2: Turn off"
+
+    while true; do
+	      sleep 1
+    done
+}
+
+findBackgroundProcessPid() {
+    result=$(ps -aux | grep -m 1 "distractions background" | awk '{print $2}')
+    echo $result
+    return $result
+}
+
+callTurnOn() {
+    echo "Turning on distractions..."
+    pid=$(findBackgroundProcessPid)
+
+    if [[ -z "${pid// }" ]]; then
+        echo "Can't find background process to signal. Please make sure `distractions background` is running."
+        exit 0
+    fi
+
+    sudo kill -USR1 $pid
+}
+
+callTurnOff() {
+    pid=$(findBackgroundProcessPid)
+
+    if [[ -z "${pid// }" ]]; then
+        echo "Can't find background process to signal. Please make sure 'distractions background' is running."
         exit 1
     fi
 
+    echo "Turning off distractions"
+    sudo kill -USR2 $pid
+}
+
+turnOff() {
     if [ ! -f $distractionsFile ]; then
         echo "$distractionsFile does not exist"
         exit 1
@@ -131,11 +169,10 @@ pomodoro() {
 
 startWork() {
     echo "Starting work-mode."
-    turnOff
+    callTurnOff
 
     if [[ -n "${on_work// }" ]]; then
         if [ -f $on_work ]; then
-            echo "call $on_work"
             sh $on_work $pomodoroWorkTime
         fi
     fi
@@ -145,7 +182,7 @@ startWork() {
 
 stopWork() {
     echo "Starting break"
-    turnOn
+    callTurnOn
 
     if [[ -n "${on_break// }" ]]; then
         if [ -f $on_break ]; then
@@ -185,9 +222,9 @@ isOn() {
 }
 
 if [[ $task == "on" ]]; then
-    turnOn
+    callTurnOn
 elif [[ $task == "off" ]]; then
-    turnOff
+    callTurnOff
 elif [[ $task == "toggle" ]]; then
     toggle
 elif [[ $task == "status" ]]; then
@@ -196,13 +233,15 @@ elif [[ $task == "clock" ]]; then
     clock
 elif [[ $task == "pomodoro" ]]; then
     pomodoro
+elif [[ $task == "background" ]]; then
+    background
 else
     echo ""
     echo "SYNOPSIS"
-    echo "    distractions [on|off|toggle|status|clock|pomodoro]"
+    echo "    distractions [on|off|toggle|status|background|clock|pomodoro]"
     echo
     echo "OPTIONS"
-    echo "    -f --file"
+    echo "       -f --file"
     echo "        Path to the distractions file. Needed for 'off' command"
     echo "       --work-time"
     echo "        Work time for pomodoro mode. Example values: '20m' '1h'. Default: 25m."
