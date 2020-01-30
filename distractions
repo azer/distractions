@@ -180,7 +180,7 @@ startWork() {
     sleep $pomodoroWorkTime
 }
 
-stopWork() {
+startBreak() {
     echo "Starting break"
     callTurnOn
 

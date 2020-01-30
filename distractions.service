@@ -1,0 +1,10 @@
+[Unit]
+Description=Pomodoro
+
+[Service]
+Type=simple
+ExecStart=/home/azer/.happy-desktop/bin/distractions background -f /home/azer/.distractions
+User=root
+
+[Install]
+WantedBy=multi-user.target
