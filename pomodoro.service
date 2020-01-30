@@ -1,0 +1,13 @@
+[Unit]
+Description=Pomodoro
+
+[Service]
+Type=simple
+ExecStart=/home/azer/.happy-desktop/bin/distractions pomodoro --on-work /home/azer/.pomodoro/start-work.sh --on-break /home/azer/.pomodoro/start-break.sh
+Environment=DISPLAY=:0
+Environment=XAUTHORITY=%h/.Xauthority
+Environment=DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus
+User=azer
+
+[Install]
+WantedBy=multi-user.target
